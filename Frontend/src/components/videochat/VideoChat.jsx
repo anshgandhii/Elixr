@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ThemeToggler from '../theme/ThemeToggler';
-import { FaBars, FaVideo,FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaDesktop, FaHome, FaForward, FaPaperPlane, FaTimes, FaPaperclip } from 'react-icons/fa';
+import { FaBars, FaVideo, FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaDesktop, FaHome, FaForward, FaPaperPlane, FaTimes, FaPaperclip } from 'react-icons/fa';
 import { FiSun } from 'react-icons/fi';
 
 const VideoChat = () => {
@@ -17,6 +17,8 @@ const VideoChat = () => {
   const remoteVideoRef = useRef(null);
   const chatContainerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const mediaStreamRef = useRef(null); // Ref to store the media stream
+
   const handleThemeIconClick = () => {
     setShowThemeToggler((prev) => !prev);
   };
@@ -25,6 +27,7 @@ const VideoChat = () => {
     const initializeWebRTC = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        mediaStreamRef.current = stream;
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
@@ -43,9 +46,34 @@ const VideoChat = () => {
   }, [messages]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-  const toggleVideo = () => setVideoEnabled(!videoEnabled);
-  const toggleAudio = () => setAudioEnabled(!audioEnabled);
-  const toggleScreenShare = () => setScreenSharing(!screenSharing);
+
+  const toggleVideo = () => {
+    setVideoEnabled((prev) => {
+      const enabled = !prev;
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getVideoTracks().forEach((track) => {
+          track.enabled = enabled;
+        });
+      }
+      return enabled;
+    });
+  };
+
+  const toggleAudio = () => {
+    setAudioEnabled((prev) => {
+      const enabled = !prev;
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getAudioTracks().forEach((track) => {
+          track.enabled = enabled;
+        });
+      }
+      return enabled;
+    });
+  };
+
+  const toggleScreenShare = () => {
+    setScreenSharing(!screenSharing);
+  };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -55,7 +83,7 @@ const VideoChat = () => {
       setNewMessage('');
       setFile(null);
       setTimeout(() => {
-        setMessages(prev => [...prev, { text: "This is a simulated response.", sender: 'Remote User' }]);
+        setMessages((prev) => [...prev, { text: 'This is a simulated response.', sender: 'Remote User' }]);
       }, 1000);
     }
   };
@@ -173,13 +201,13 @@ const VideoChat = () => {
           {/* Controls */}
           <div className="flex justify-center mt-6 space-x-4">
             <button onClick={toggleVideo} className={`btn btn-circle btn-lg ${videoEnabled ? 'btn-primary' : 'btn-error'}`}>
-              {videoEnabled ? <FaVideo size={24} /> : <FaVideoSlash size={24} />}
+              {videoEnabled ? <FaVideo /> : <FaVideoSlash />}
             </button>
             <button onClick={toggleAudio} className={`btn btn-circle btn-lg ${audioEnabled ? 'btn-primary' : 'btn-error'}`}>
-              {audioEnabled ? <FaMicrophone size={24} /> : <FaMicrophoneSlash size={24} />}
+              {audioEnabled ? <FaMicrophone /> : <FaMicrophoneSlash />}
             </button>
-            <button onClick={toggleScreenShare} className={`btn btn-circle btn-lg ${screenSharing ? 'btn-secondary' : 'btn-primary'}`}>
-              <FaDesktop size={24} />
+            <button onClick={toggleScreenShare} className="btn btn-circle btn-lg btn-primary">
+              <FaDesktop />
             </button>
           </div>
         </main>
